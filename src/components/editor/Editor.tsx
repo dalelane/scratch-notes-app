@@ -1160,6 +1160,12 @@ export function Editor({
           slice.content.size,
           "\n\n",
         );
+        // Selections within code blocks copy as-is, without markdown fences
+        let codeOnly = true;
+        slice.content.forEach((node) => {
+          if (node.type.name !== "codeBlock") codeOnly = false;
+        });
+        if (codeOnly) return fallback;
         const currentEditor = editorRef.current;
         const manager = currentEditor?.storage.markdown?.manager;
         if (!currentEditor || !manager) return fallback;
