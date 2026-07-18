@@ -20,6 +20,7 @@ import {
   PinIcon,
   CopyIcon,
   TrashIcon,
+  ExternalLinkIcon,
 } from "../icons";
 import type { Settings } from "../../types/note";
 
@@ -208,6 +209,13 @@ const NoteItemWithMenu = memo(function NoteItemWithMenu({
           >
             <CopyIcon className="w-4 h-4 stroke-[1.6]" />
             Copy Filepath
+          </ContextMenu.Item>
+          <ContextMenu.Item
+            className={menuItemClass}
+            onSelect={() => notesService.openNoteInWindow(id)}
+          >
+            <ExternalLinkIcon className="w-4 h-4 stroke-[1.6]" />
+            Open in New Window
           </ContextMenu.Item>
           <ContextMenu.Separator className={menuSeparatorClass} />
           <ContextMenu.Item

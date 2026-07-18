@@ -3610,6 +3610,65 @@ fn create_preview_window(app: &AppHandle, file_path: &str) -> Result<(), String>
     Ok(())
 }
 
+/// Open a note that's already inside the notes folder in its own window, showing
+/// the full app UI (sidebar + editor) rather than the lightweight preview view.
+#[tauri::command]
+fn open_note_in_window(app: AppHandle, state: State<AppState>, note_id: String) -> Result<(), String> {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+
+    let mut hasher = DefaultHasher::new();
+    note_id.hash(&mut hasher);
+    let label = format!("note-{:x}", hasher.finish());
+
+    // If a window for this note already exists, just focus it
+    if let Some(window) = app.get_webview_window(&label) {
+        let _ = app.emit_to(&label, "select-note", note_id);
+        window.set_focus().map_err(|e| e.to_string())?;
+        return Ok(());
+    }
+
+    let title = state
+        .notes_cache
+        .read()
+        .expect("cache read lock")
+        .get(&note_id)
+        .map(|note| format!("{} — Scratch", note.title))
+        .unwrap_or_else(|| "Scratch".to_string());
+
+    // Pass the note ID via the window URL (same pattern create_preview_window uses
+    // for its `file` param) so the new window selects it deterministically as soon
+    // as it loads, rather than racing a post-creation event against webview startup.
+    let encoded_id = urlencoding::encode(&note_id);
+    let url = format!("index.html?note={}", encoded_id);
+
+    let builder = WebviewWindowBuilder::new(&app, &label, WebviewUrl::App(url.into()))
+        .title(title)
+        .inner_size(1080.0, 720.0)
+        .min_inner_size(600.0, 400.0)
+        .resizable(true)
+        .decorations(true);
+
+    #[cfg(target_os = "macos")]
+    let builder = builder
+        .title_bar_style(tauri::TitleBarStyle::Overlay)
+        .hidden_title(true);
+
+    let window = builder
+        .build()
+        .map_err(|e| format!("Failed to create note window: {}", e))?;
+
+    // Focus the new window so it appears on top of the main window (during cold
+    // start the main window may otherwise steal focus after its WebView loads).
+    let win = window.clone();
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_millis(500));
+        let _ = win.set_focus();
+    });
+
+    Ok(())
+}
+
 #[tauri::command]
 fn open_file_preview(app: AppHandle, path: String) -> Result<(), String> {
     let file_path = PathBuf::from(&path);
@@ -3889,6 +3948,7 @@ pub fn run() {
             save_file_direct,
             import_file_to_folder,
             open_file_preview,
+            open_note_in_window,
             install_cli,
             uninstall_cli,
             get_cli_status,

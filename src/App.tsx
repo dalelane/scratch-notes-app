@@ -48,6 +48,11 @@ function getWindowMode(): {
   };
 }
 
+// Detect the note this window should open to (set by "Open in New Window")
+function getInitialNoteId(): string | null {
+  return new URLSearchParams(window.location.search).get("note");
+}
+
 type ViewState = "notes" | "settings";
 
 function AppContent() {
@@ -82,6 +87,16 @@ function AppContent() {
   const [focusMode, setFocusMode] = useState(false);
   const [aiProvider, setAiProvider] = useState<AiProvider>("claude");
   const editorRef = useRef<TiptapEditor | null>(null);
+  const initialNoteIdRef = useRef(getInitialNoteId());
+
+  // Select the note this window was opened for (via "Open in New Window"),
+  // once the initial note list has loaded.
+  useEffect(() => {
+    if (initialNoteIdRef.current && !isLoading) {
+      selectNote(initialNoteIdRef.current);
+      initialNoteIdRef.current = null;
+    }
+  }, [isLoading, selectNote]);
 
   // Listen for set-notes-folder event from CLI (scratch .)
   // Placed here in AppContent where both NotesContext and ThemeContext are available

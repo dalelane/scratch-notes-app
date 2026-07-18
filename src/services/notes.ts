@@ -25,6 +25,10 @@ export async function deleteNote(id: string): Promise<void> {
   return invoke("delete_note", { id });
 }
 
+export async function openNoteInWindow(id: string): Promise<void> {
+  return invoke("open_note_in_window", { noteId: id });
+}
+
 export async function createNote(targetFolder?: string): Promise<Note> {
   return invoke("create_note", { targetFolder: targetFolder ?? null });
 }

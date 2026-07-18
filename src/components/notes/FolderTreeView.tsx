@@ -33,6 +33,7 @@ import {
   PinIcon,
   CopyIcon,
   ArrowUpIcon,
+  ExternalLinkIcon,
 } from "../icons";
 import * as notesService from "../../services/notes";
 import type { FolderNode, NoteMetadata, Settings } from "../../types/note";
@@ -205,6 +206,13 @@ const FileItem = memo(function FileItem({
           >
             <CopyIcon className="w-4 h-4 stroke-[1.6]" />
             Copy Filepath
+          </ContextMenu.Item>
+          <ContextMenu.Item
+            className={menuItemClass}
+            onSelect={() => notesService.openNoteInWindow(note.id)}
+          >
+            <ExternalLinkIcon className="w-4 h-4 stroke-[1.6]" />
+            Open in New Window
           </ContextMenu.Item>
           {noteParentFolder && onMoveToParent && (
             <>
